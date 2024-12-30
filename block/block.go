@@ -3,33 +3,41 @@ package block
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"strconv"
+	"strings"
 	"time"
 )
 
 type Block struct {
-	Index     int
-	Timestamp string
-	Nonce     int
-	Data      string
-	PrevHash  string
-	Hash      string
+	Index        int
+	Timestamp    string
+	Nonce        int
+	Data         string
+	PrevHash     string
+	Hash         string
+	Transactions []Transaction
 }
 
-func (b *Block) Add() {
-	// Add block to chain
-	fmt.Println("----- Block Added -----")
-	fmt.Println("Block Index:", b.Index)
-	fmt.Println("Time Stamp:", b.Timestamp)
-	fmt.Println("Nonce:", b.Nonce)
-	fmt.Println("Data:", b.Data)
-	fmt.Println("Previous Hash:", b.PrevHash)
-	fmt.Println("Block Hash:", b.Hash)
+func (b *Block) String() string {
+	var lines []string
+	lines = append(lines, "----- Block -----")
+	lines = append(lines, "Block Index: "+strconv.Itoa(b.Index))
+	lines = append(lines, "Time Stamp: "+b.Timestamp)
+	lines = append(lines, "Nonce: "+strconv.Itoa(b.Nonce))
+	lines = append(lines, "Data: "+b.Data)
+	lines = append(lines, "Previous Hash: "+b.PrevHash)
+	lines = append(lines, "Block Hash: "+b.Hash)
+	for _, t := range b.Transactions {
+		lines = append(lines, t.String())
+	}
+	return strings.Join(lines, "\n")
 }
 
 func (b *Block) CalculateHash() string {
 	record := strconv.Itoa(b.Index) + b.Timestamp + b.Data + b.PrevHash + strconv.Itoa(b.Nonce)
+	for _, t := range b.Transactions {
+		record += strconv.Itoa(t.Id) + t.From + t.To + strconv.Itoa(t.Amount)
+	}
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)

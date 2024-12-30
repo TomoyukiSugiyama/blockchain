@@ -18,11 +18,15 @@ func NewBlockchain() *Blockchain {
 	bc := &Blockchain{}
 	bc.createGenesisBlock()
 
+	// Test adding transactions
+	tr1 := block.CreateNewTransaction(0, "Alice", "Bob", 100)
+	tr2 := block.CreateNewTransaction(1, "Alice", "Bob", 10)
+	trs := []block.Transaction{*tr1, *tr2}
 	// Test adding a block
-	bc.MineBlock("First Block")
-	bc.MineBlock("Second Block")
-	bc.MineBlock("Third Block")
-	bc.MineBlock("Fourth Block")
+	bc.MineBlock("First Block", trs)
+	// bc.MineBlock("Second Block")
+	// bc.MineBlock("Third Block")
+	// bc.MineBlock("Fourth Block")
 	return bc
 }
 
@@ -47,7 +51,7 @@ func (bc *Blockchain) createGenesisBlock() {
 	bc.Blocks = make(map[string]*block.Block)
 	bc.currentBlock = &genesisBlock
 	bc.Blocks[genesisBlock.Hash] = &genesisBlock
-	bc.Blocks[genesisBlock.Hash].Add()
+	fmt.Println(bc.Blocks[genesisBlock.Hash].String())
 }
 
 func (bc *Blockchain) addBlock(b *block.Block, h string) {
@@ -64,12 +68,13 @@ func (bc *Blockchain) addBlock(b *block.Block, h string) {
 	}
 
 	bc.Blocks[h] = b
-	bc.Blocks[h].Add()
+	fmt.Println(bc.Blocks[h].String())
 }
 
-func (bc *Blockchain) MineBlock(message string) {
+func (bc *Blockchain) MineBlock(message string, trs []block.Transaction) {
 	newBlock := bc.currentBlock.GenerateBlock()
 	newBlock.Data = message
+	newBlock.Transactions = trs
 	for i := 0; i < tryLimit; i++ {
 		newBlock.Nonce = i
 		newBlock.Hash = newBlock.CalculateHash()
