@@ -23,13 +23,13 @@ func (b *Block) Add() {
 	fmt.Println("Block Index:", b.Index)
 	fmt.Println("Time Stamp:", b.Timestamp)
 	fmt.Println("Nonce:", b.Nonce)
-	fmt.Println("Transaction Data:", b.Data)
+	fmt.Println("Data:", b.Data)
 	fmt.Println("Previous Hash:", b.PrevHash)
 	fmt.Println("Block Hash:", b.Hash)
 }
 
 func (b *Block) CalculateHash() string {
-	record := strconv.Itoa(b.Index) + b.Timestamp + b.Data + b.PrevHash
+	record := strconv.Itoa(b.Index) + b.Timestamp + b.Data + b.PrevHash + strconv.Itoa(b.Nonce)
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)

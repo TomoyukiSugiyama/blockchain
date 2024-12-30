@@ -11,34 +11,44 @@ type Blockchain struct {
 	currentBlock *block.Block
 }
 
+const tryLimit = 1000000
+const difficulty = 4
+
 func NewBlockchain() *Blockchain {
 	bc := &Blockchain{}
 	bc.createGenesisBlock()
 
 	// Test adding a block
-	newBlock := bc.currentBlock.GenerateBlock()
-	newBlock.Hash = newBlock.CalculateHash()
-	bc.addBlock(newBlock, newBlock.Hash)
+	bc.MineBlock("First Block")
+	bc.MineBlock("Second Block")
+	bc.MineBlock("Third Block")
+	bc.MineBlock("Fourth Block")
 	return bc
 }
 
 func (bc *Blockchain) createGenesisBlock() {
-	b := block.Block{
+	genesisBlock := block.Block{
 		Index:     0,
 		Timestamp: time.Now().String(),
 		Nonce:     1,
 		Data:      "Genesis Block",
 		PrevHash:  "",
 	}
-	b.Hash = b.CalculateHash()
-	fmt.Println("Genesis Block Hash: ", b.Hash)
-	bc.Blocks = make(map[string]*block.Block)
-	bc.currentBlock = &b
-	bc.Blocks[b.Hash] = &b
-	bc.Blocks[b.Hash].Add()
-}
 
-const difficulty = 4
+	for i := 0; i < tryLimit; i++ {
+		genesisBlock.Nonce = i
+		genesisBlock.Hash = genesisBlock.CalculateHash()
+		if checkHash(genesisBlock.Hash, difficulty) {
+			break
+		}
+	}
+
+	fmt.Println("Genesis Block Hash: ", genesisBlock.Hash)
+	bc.Blocks = make(map[string]*block.Block)
+	bc.currentBlock = &genesisBlock
+	bc.Blocks[genesisBlock.Hash] = &genesisBlock
+	bc.Blocks[genesisBlock.Hash].Add()
+}
 
 func (bc *Blockchain) addBlock(b *block.Block, h string) {
 	// if !checkHash(h, difficulty) {
@@ -53,6 +63,20 @@ func (bc *Blockchain) addBlock(b *block.Block, h string) {
 
 	bc.Blocks[h] = b
 	bc.Blocks[h].Add()
+}
+
+func (bc *Blockchain) MineBlock(message string) {
+	newBlock := bc.currentBlock.GenerateBlock()
+	newBlock.Data = message
+	for i := 0; i < tryLimit; i++ {
+		newBlock.Nonce = i
+		newBlock.Hash = newBlock.CalculateHash()
+		if checkHash(newBlock.Hash, difficulty) {
+			break
+		}
+	}
+	bc.addBlock(newBlock, newBlock.Hash)
+	bc.currentBlock = newBlock
 }
 
 func checkHash(hash string, difficulty int) bool {
