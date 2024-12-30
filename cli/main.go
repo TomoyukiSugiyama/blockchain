@@ -1,8 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"blockchain/blockchain"
+)
 
 func main() {
-	fmt.Println("Hello, World!")
-
+	blockchain.NewBlockchain()
 }
