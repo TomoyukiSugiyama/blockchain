@@ -51,13 +51,15 @@ func (bc *Blockchain) createGenesisBlock() {
 }
 
 func (bc *Blockchain) addBlock(b *block.Block, h string) {
-	// if !checkHash(h, difficulty) {
-	// 	// Reject block
-	// 	return
-	// }
+	if !checkHash(h, difficulty) {
+		// Reject block
+		fmt.Println("Block Rejected with hash: ", h)
+		return
+	}
 
 	if !isExistPreviousBlock(bc.Blocks, b.PrevHash) {
 		// Reject block
+		fmt.Println("Block Rejected")
 		return
 	}
 
