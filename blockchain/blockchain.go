@@ -7,7 +7,8 @@ import (
 )
 
 type Blockchain struct {
-	Blocks map[string]*block.Block
+	Blocks       map[string]*block.Block
+	currentBlock *block.Block
 }
 
 func NewBlockchain() *Blockchain {
@@ -15,14 +16,9 @@ func NewBlockchain() *Blockchain {
 	bc.createGenesisBlock()
 
 	// Test adding a block
-	b := block.Block{
-		Index:     1,
-		Timestamp: time.Now().String(),
-		Nonce:     0,
-		Data:      "Hi there!",
-		PrevHash:  "0000",
-	}
-	bc.addBlock(&b, "000011")
+	newBlock := bc.currentBlock.GenerateBlock()
+	newBlock.Hash = newBlock.CalculateHash()
+	bc.addBlock(newBlock, newBlock.Hash)
 	return bc
 }
 
@@ -34,20 +30,21 @@ func (bc *Blockchain) createGenesisBlock() {
 		Data:      "Genesis Block",
 		PrevHash:  "",
 	}
-	b.Hash = block.CalculateHash(&b)
+	b.Hash = b.CalculateHash()
 	fmt.Println("Genesis Block Hash: ", b.Hash)
 	bc.Blocks = make(map[string]*block.Block)
-	bc.Blocks["0000"] = &b
-	block.Add(bc.Blocks["0000"])
+	bc.currentBlock = &b
+	bc.Blocks[b.Hash] = &b
+	bc.Blocks[b.Hash].Add()
 }
 
 const difficulty = 4
 
 func (bc *Blockchain) addBlock(b *block.Block, h string) {
-	if !checkHash(h, difficulty) {
-		// Reject block
-		return
-	}
+	// if !checkHash(h, difficulty) {
+	// 	// Reject block
+	// 	return
+	// }
 
 	if !isExistPreviousBlock(bc.Blocks, b.PrevHash) {
 		// Reject block
@@ -55,7 +52,7 @@ func (bc *Blockchain) addBlock(b *block.Block, h string) {
 	}
 
 	bc.Blocks[h] = b
-	block.Add(bc.Blocks[h])
+	bc.Blocks[h].Add()
 }
 
 func checkHash(hash string, difficulty int) bool {

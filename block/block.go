@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strconv"
+	"time"
 )
 
 type Block struct {
@@ -16,7 +17,7 @@ type Block struct {
 	Hash      string
 }
 
-func Add(b *Block) {
+func (b *Block) Add() {
 	// Add block to chain
 	fmt.Println("----- Block Added -----")
 	fmt.Println("Block Index:", b.Index)
@@ -24,12 +25,24 @@ func Add(b *Block) {
 	fmt.Println("Nonce:", b.Nonce)
 	fmt.Println("Transaction Data:", b.Data)
 	fmt.Println("Previous Hash:", b.PrevHash)
+	fmt.Println("Block Hash:", b.Hash)
 }
 
-func CalculateHash(b *Block) string {
+func (b *Block) CalculateHash() string {
 	record := strconv.Itoa(b.Index) + b.Timestamp + b.Data + b.PrevHash
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)
 	return hex.EncodeToString(hashed)
+}
+
+func (b *Block) GenerateBlock() *Block {
+	newBlock := &Block{
+		Index:     b.Index + 1,
+		Data:      "",
+		Timestamp: time.Now().String(),
+		Nonce:     0,
+		PrevHash:  b.Hash,
+	}
+	return newBlock
 }
