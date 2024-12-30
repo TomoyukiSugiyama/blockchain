@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"blockchain/account"
 	"blockchain/block"
 	"fmt"
 	"time"
@@ -18,15 +19,21 @@ func NewBlockchain() *Blockchain {
 	bc := &Blockchain{}
 	bc.createGenesisBlock()
 
+	// Test adding accounts
+	acc1 := account.CreateNewAccount("0000", "Alice", 1000)
+	acc2 := account.CreateNewAccount("0001", "Bob", 1000)
+	accs := map[string]*account.Account{acc1.Id: acc1, acc2.Id: acc2}
+	fmt.Println(acc1.String())
+	fmt.Println(acc2.String())
 	// Test adding transactions
-	tr1 := block.CreateNewTransaction(0, "Alice", "Bob", 100)
-	tr2 := block.CreateNewTransaction(1, "Alice", "Bob", 10)
+	tr1 := block.CreateNewTransaction(0, acc1.Id, acc2.Id, 100)
+	tr2 := block.CreateNewTransaction(1, acc1.Id, acc2.Id, 10)
 	trs := []block.Transaction{*tr1, *tr2}
 	// Test adding a block
-	bc.MineBlock("First Block", trs)
-	// bc.MineBlock("Second Block")
-	// bc.MineBlock("Third Block")
-	// bc.MineBlock("Fourth Block")
+	bc.MineBlock("First Block", trs, accs)
+	fmt.Println(acc1.String())
+	fmt.Println(acc2.String())
+
 	return bc
 }
 
@@ -71,7 +78,7 @@ func (bc *Blockchain) addBlock(b *block.Block, h string) {
 	fmt.Println(bc.Blocks[h].String())
 }
 
-func (bc *Blockchain) MineBlock(message string, trs []block.Transaction) {
+func (bc *Blockchain) MineBlock(message string, trs []block.Transaction, accs map[string]*account.Account) {
 	newBlock := bc.currentBlock.GenerateBlock()
 	newBlock.Data = message
 	newBlock.Transactions = trs
@@ -83,6 +90,9 @@ func (bc *Blockchain) MineBlock(message string, trs []block.Transaction) {
 		}
 	}
 	bc.addBlock(newBlock, newBlock.Hash)
+	for _, t := range trs {
+		t.Run(accs)
+	}
 	bc.currentBlock = newBlock
 }
 

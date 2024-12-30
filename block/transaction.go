@@ -1,6 +1,8 @@
 package block
 
 import (
+	"blockchain/account"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -31,4 +33,19 @@ func (t *Transaction) String() string {
 	lines = append(lines, "Amount: "+strconv.Itoa(t.Amount))
 
 	return strings.Join(lines, "\n")
+}
+
+func (t *Transaction) Run(accounts map[string]*account.Account) {
+	from := accounts[t.From]
+	to := accounts[t.To]
+	if from == nil || to == nil {
+		fmt.Println("Invalid transaction")
+		return
+	}
+	if from.Balance < t.Amount {
+		fmt.Println("Insufficient balance")
+		return
+	}
+	from.Balance -= t.Amount
+	to.Balance += t.Amount
 }
