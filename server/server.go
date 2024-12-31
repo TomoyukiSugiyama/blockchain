@@ -1,7 +1,7 @@
 package server
 
 import (
-	"blockchain/blockchain"
+	"blockchain/internal/blockchain"
 	"bufio"
 	"fmt"
 	"net"

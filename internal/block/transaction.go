@@ -1,7 +1,7 @@
 package block
 
 import (
-	"blockchain/account"
+	"blockchain/internal/account"
 	"fmt"
 	"strconv"
 	"strings"

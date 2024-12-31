@@ -1,8 +1,8 @@
 package blockchain
 
 import (
-	"blockchain/account"
-	"blockchain/block"
+	"blockchain/internal/account"
+	"blockchain/internal/block"
 	"fmt"
 	"time"
 )
