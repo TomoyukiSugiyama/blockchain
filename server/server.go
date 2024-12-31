@@ -5,6 +5,7 @@ import (
 	"context"
 	"log"
 	"net"
+	"strconv"
 
 	"blockchain/internal/account"
 	"blockchain/internal/block"
@@ -21,6 +22,7 @@ type server struct {
 	accs map[string]*account.Account
 }
 
+// Test function
 func InitAccount() map[string]*account.Account {
 	acc1 := account.CreateNewAccount("0000", "Alice", 1000)
 	acc2 := account.CreateNewAccount("0001", "Bob", 1000)
@@ -31,7 +33,6 @@ func InitAccount() map[string]*account.Account {
 }
 
 func (s *server) ExecuteTrunsaction(_ context.Context, in *pb.TransactionRequest) (*pb.TransactionReply, error) {
-
 	log.Printf("Transaction from %s to %s", in.GetFrom(), in.GetTo())
 	log.Printf("Amount: %d", in.GetAmount())
 
@@ -42,7 +43,8 @@ func (s *server) ExecuteTrunsaction(_ context.Context, in *pb.TransactionRequest
 	for _, acc := range s.accs {
 		log.Println(acc.String())
 	}
-	return &pb.TransactionReply{Message: "Hello " + in.GetFrom()}, nil
+	message := "Transaction from " + s.accs[in.GetFrom()].Name + " to " + s.accs[in.GetTo()].Name + " with amount " + strconv.Itoa(int(in.GetAmount()))
+	return &pb.TransactionReply{Message: message}, nil
 }
 
 func StartServer() {

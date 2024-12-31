@@ -2,7 +2,7 @@ package block
 
 import (
 	"blockchain/internal/account"
-	"fmt"
+	"log"
 	"strconv"
 	"strings"
 )
@@ -39,11 +39,11 @@ func (t *Transaction) Run(accounts map[string]*account.Account) {
 	from := accounts[t.From]
 	to := accounts[t.To]
 	if from == nil || to == nil {
-		fmt.Println("Invalid transaction")
+		log.Fatalln("Invalid transaction")
 		return
 	}
 	if from.Balance < t.Amount {
-		fmt.Println("Insufficient balance")
+		log.Fatalln("Insufficient balance")
 		return
 	}
 	from.Balance -= t.Amount

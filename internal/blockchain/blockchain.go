@@ -3,7 +3,7 @@ package blockchain
 import (
 	"blockchain/internal/account"
 	"blockchain/internal/block"
-	"fmt"
+	"log"
 	"time"
 )
 
@@ -39,28 +39,27 @@ func (bc *Blockchain) createGenesisBlock() {
 		}
 	}
 
-	fmt.Println("Genesis Block Hash: ", genesisBlock.Hash)
 	bc.Blocks = make(map[string]*block.Block)
 	bc.currentBlock = &genesisBlock
 	bc.Blocks[genesisBlock.Hash] = &genesisBlock
-	fmt.Println(bc.Blocks[genesisBlock.Hash].String())
+	log.Println(bc.Blocks[genesisBlock.Hash].String())
 }
 
 func (bc *Blockchain) addBlock(b *block.Block, h string) {
 	if !checkHash(h, difficulty) {
 		// Reject block
-		fmt.Println("Block Rejected with hash: ", h)
+		log.Fatalln("Block Rejected with hash: ", h)
 		return
 	}
 
 	if !isExistPreviousBlock(bc.Blocks, b.PrevHash) {
 		// Reject block
-		fmt.Println("Block Rejected")
+		log.Fatalln("Block Rejected")
 		return
 	}
 
 	bc.Blocks[h] = b
-	fmt.Println(bc.Blocks[h].String())
+	log.Println(bc.Blocks[h].String())
 }
 
 func (bc *Blockchain) MineBlock(message string, trs []block.Transaction, accs map[string]*account.Account) {
