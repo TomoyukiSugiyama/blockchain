@@ -35,4 +35,6 @@ func handleConnection(conn net.Conn) {
 		// handle error
 	}
 	fmt.Println(status)
+	fmt.Fprintf(conn, "HTTP/1.0 200 OK\r\n\r\n")
+
 }
