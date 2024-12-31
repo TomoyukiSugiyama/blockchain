@@ -1,9 +1,9 @@
 package main
 
 import (
-	"blockchain/blockchain"
+	"blockchain/server"
 )
 
 func main() {
-	blockchain.NewBlockchain()
+	server.StartServer()
 }
