@@ -2,14 +2,15 @@ syntax = "proto3";
 option go_package = "./proto";
 
 service Blockchain {
-  // Sends a greeting
-  rpc SayHello (Request) returns (Reply) {}
+  rpc ExecuteTrunsaction (TransactionRequest) returns (TransactionReply) {}
 }
 
-message Request {
-    string op = 1;
+message TransactionRequest {
+    string from = 1;
+    string to = 2;
+    int32 amount = 3;
 }
 
-message Reply {
+message TransactionReply {
     string message = 1;
 }

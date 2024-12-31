@@ -19,21 +19,6 @@ func NewBlockchain() *Blockchain {
 	bc := &Blockchain{}
 	bc.createGenesisBlock()
 
-	// Test adding accounts
-	acc1 := account.CreateNewAccount("0000", "Alice", 1000)
-	acc2 := account.CreateNewAccount("0001", "Bob", 1000)
-	accs := map[string]*account.Account{acc1.Id: acc1, acc2.Id: acc2}
-	fmt.Println(acc1.String())
-	fmt.Println(acc2.String())
-	// Test adding transactions
-	tr1 := block.CreateNewTransaction(0, acc1.Id, acc2.Id, 100)
-	tr2 := block.CreateNewTransaction(1, acc1.Id, acc2.Id, 10)
-	trs := []block.Transaction{*tr1, *tr2}
-	// Test adding a block
-	bc.MineBlock("First Block", trs, accs)
-	fmt.Println(acc1.String())
-	fmt.Println(acc2.String())
-
 	return bc
 }
 

@@ -19,15 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Blockchain_SayHello_FullMethodName = "/Blockchain/SayHello"
+	Blockchain_ExecuteTrunsaction_FullMethodName = "/Blockchain/ExecuteTrunsaction"
 )
 
 // BlockchainClient is the client API for Blockchain service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BlockchainClient interface {
-	// Sends a greeting
-	SayHello(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Reply, error)
+	ExecuteTrunsaction(ctx context.Context, in *TransactionRequest, opts ...grpc.CallOption) (*TransactionReply, error)
 }
 
 type blockchainClient struct {
@@ -38,10 +37,10 @@ func NewBlockchainClient(cc grpc.ClientConnInterface) BlockchainClient {
 	return &blockchainClient{cc}
 }
 
-func (c *blockchainClient) SayHello(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Reply, error) {
+func (c *blockchainClient) ExecuteTrunsaction(ctx context.Context, in *TransactionRequest, opts ...grpc.CallOption) (*TransactionReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Reply)
-	err := c.cc.Invoke(ctx, Blockchain_SayHello_FullMethodName, in, out, cOpts...)
+	out := new(TransactionReply)
+	err := c.cc.Invoke(ctx, Blockchain_ExecuteTrunsaction_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +51,7 @@ func (c *blockchainClient) SayHello(ctx context.Context, in *Request, opts ...gr
 // All implementations must embed UnimplementedBlockchainServer
 // for forward compatibility.
 type BlockchainServer interface {
-	// Sends a greeting
-	SayHello(context.Context, *Request) (*Reply, error)
+	ExecuteTrunsaction(context.Context, *TransactionRequest) (*TransactionReply, error)
 	mustEmbedUnimplementedBlockchainServer()
 }
 
@@ -64,8 +62,8 @@ type BlockchainServer interface {
 // pointer dereference when methods are called.
 type UnimplementedBlockchainServer struct{}
 
-func (UnimplementedBlockchainServer) SayHello(context.Context, *Request) (*Reply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SayHello not implemented")
+func (UnimplementedBlockchainServer) ExecuteTrunsaction(context.Context, *TransactionRequest) (*TransactionReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExecuteTrunsaction not implemented")
 }
 func (UnimplementedBlockchainServer) mustEmbedUnimplementedBlockchainServer() {}
 func (UnimplementedBlockchainServer) testEmbeddedByValue()                    {}
@@ -88,20 +86,20 @@ func RegisterBlockchainServer(s grpc.ServiceRegistrar, srv BlockchainServer) {
 	s.RegisterService(&Blockchain_ServiceDesc, srv)
 }
 
-func _Blockchain_SayHello_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Request)
+func _Blockchain_ExecuteTrunsaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TransactionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BlockchainServer).SayHello(ctx, in)
+		return srv.(BlockchainServer).ExecuteTrunsaction(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Blockchain_SayHello_FullMethodName,
+		FullMethod: Blockchain_ExecuteTrunsaction_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BlockchainServer).SayHello(ctx, req.(*Request))
+		return srv.(BlockchainServer).ExecuteTrunsaction(ctx, req.(*TransactionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -114,8 +112,8 @@ var Blockchain_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*BlockchainServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SayHello",
-			Handler:    _Blockchain_SayHello_Handler,
+			MethodName: "ExecuteTrunsaction",
+			Handler:    _Blockchain_ExecuteTrunsaction_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

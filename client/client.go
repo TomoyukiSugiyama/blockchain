@@ -23,10 +23,10 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := c.SayHello(ctx, &pb.Request{Op: "world"})
+	r, err := c.ExecuteTrunsaction(ctx, &pb.TransactionRequest{From: "0000", To: "0001", Amount: 100})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
-	log.Printf("Greeting: %s", r.GetMessage())
+	log.Printf("Reply: %s", r.GetMessage())
 
 }
