@@ -36,7 +36,7 @@ func (s *server) ExecuteTrunsaction(_ context.Context, in *pb.TransactionRequest
 	log.Printf("Transaction from %s to %s", in.GetFrom(), in.GetTo())
 	log.Printf("Amount: %d", in.GetAmount())
 
-	tr1 := block.CreateNewTransaction(0, in.GetFrom(), in.GetTo(), 100)
+	tr1 := block.CreateNewTransaction(0, in.GetFrom(), in.GetTo(), int(in.GetAmount()))
 	trs := []block.Transaction{*tr1}
 	s.bc.MineBlock("First Block", trs, s.accs)
 
