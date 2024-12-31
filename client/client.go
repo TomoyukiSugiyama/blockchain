@@ -1,21 +1,32 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
-	"net"
+	"context"
+	"log"
+	"time"
+
+	pb "blockchain/proto"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
+const address = "127.0.0.1:8080"
+
 func main() {
-	conn, err := net.Dial("tcp", "127.0.0.1:8080")
+	conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		// handle error
+		log.Fatalf("did not connect: %v", err)
 	}
-	fmt.Fprintf(conn, "GET / HTTP/1.0\r\n\r\n")
-	status, err := bufio.NewReader(conn).ReadString('\n')
+	defer conn.Close()
+	c := pb.NewBlockchainClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	r, err := c.SayHello(ctx, &pb.Request{Op: "world"})
 	if err != nil {
-		// handle error
+		log.Fatalf("could not greet: %v", err)
 	}
-	fmt.Println(status)
+	log.Printf("Greeting: %s", r.GetMessage())
 
 }
