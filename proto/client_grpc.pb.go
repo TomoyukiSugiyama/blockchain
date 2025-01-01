@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.2
-// source: proto/blockchain.proto
+// source: proto/client.proto
 
 package proto
 
@@ -117,5 +117,5 @@ var Blockchain_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/blockchain.proto",
+	Metadata: "proto/client.proto",
 }

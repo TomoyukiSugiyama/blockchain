@@ -6,18 +6,22 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"time"
 
 	"blockchain/internal/account"
 	"blockchain/internal/block"
 	pb "blockchain/proto"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
-const address = "127.0.0.1:8080"
+const clientAddress = "127.0.0.1:8080"
+const nodeAddress = "127.0.0.1:9090"
 
 type server struct {
 	pb.UnimplementedBlockchainServer
+	pb.UnimplementedNodeServer
 	bc   *blockchain.Blockchain
 	accs map[string]*account.Account
 }
@@ -47,20 +51,51 @@ func (s *server) ExecuteTrunsaction(_ context.Context, in *pb.TransactionRequest
 	return &pb.TransactionReply{Message: message}, nil
 }
 
+func (s *server) ResisterNode(_ context.Context, in *pb.JoinRequest) (*pb.JoinReply, error) {
+	log.Printf("Node connected: %s", in.GetId())
+	return &pb.JoinReply{Message: "Welcome to the blockchain"}, nil
+}
+
 func StartServer() {
-	listener, err := net.Listen("tcp", address)
+	clientListener, err := net.Listen("tcp", clientAddress)
 	if err != nil {
 		panic(err)
 	}
-	defer listener.Close()
+	defer clientListener.Close()
 
 	bc := blockchain.NewBlockchain()
 	accs := InitAccount()
+	c := grpc.NewServer()
+	pb.RegisterBlockchainServer(c, &server{bc: bc, accs: accs})
+	log.Printf("Starting client server on %s", clientAddress)
+	go c.Serve(clientListener)
+
+	nodeListener, err := net.Listen("tcp", nodeAddress)
+	if err != nil {
+		panic(err)
+	}
+	defer nodeListener.Close()
 	s := grpc.NewServer()
-	pb.RegisterBlockchainServer(s, &server{bc: bc, accs: accs})
-	log.Printf("Starting server on %s", address)
-	if err := s.Serve(listener); err != nil {
+	pb.RegisterNodeServer(s, &server{bc: bc, accs: accs})
+	log.Printf("Starting node server on %s", nodeAddress)
+	if err := s.Serve(nodeListener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+}
 
+func StartClientServer() {
+	conn, err := grpc.NewClient(nodeAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	c := pb.NewNodeClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	r, err := c.ResisterNode(ctx, &pb.JoinRequest{Id: "client0123"})
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+	log.Printf("Reply: %s", r.GetMessage())
 }

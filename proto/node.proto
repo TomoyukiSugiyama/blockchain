@@ -1,0 +1,14 @@
+syntax = "proto3";
+option go_package = "./proto";
+
+service Node {
+  rpc ResisterNode (JoinRequest) returns (JoinReply) {}
+}
+
+message JoinRequest {
+    string id = 1;
+}
+
+message JoinReply {
+    string message = 1;
+}
