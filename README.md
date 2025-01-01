@@ -2,7 +2,7 @@
 
 
 Generate gRPC code 
-```
+```bash
 protoc --go_out=. --go_opt=paths=source_relative \
     --go-grpc_out=. --go-grpc_opt=paths=source_relative \
     proto/client.proto proto/node.proto

@@ -6,14 +6,14 @@ import (
 )
 
 type Account struct {
-	Id      string
+	Address string
 	Name    string
 	Balance int
 }
 
-func CreateNewAccount(id string, name string, balance int) *Account {
+func CreateNewAccount(address string, name string, balance int) *Account {
 	a := &Account{
-		Id:      id,
+		Address: address,
 		Name:    name,
 		Balance: balance,
 	}
@@ -23,7 +23,7 @@ func CreateNewAccount(id string, name string, balance int) *Account {
 func (a *Account) String() string {
 	var lines []string
 	lines = append(lines, "----- Account -----")
-	lines = append(lines, "Account Id: "+a.Id)
+	lines = append(lines, "Address: "+a.Address)
 	lines = append(lines, "Name: "+a.Name)
 	lines = append(lines, "Balance: "+strconv.Itoa(a.Balance))
 

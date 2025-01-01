@@ -30,10 +30,8 @@ type server struct {
 func InitAccount() map[string]*account.Account {
 	acc1 := account.CreateNewAccount("0000", "Alice", 1000)
 	acc2 := account.CreateNewAccount("0001", "Bob", 1000)
-	log.Println(acc1.String())
-	log.Println(acc2.String())
 
-	return map[string]*account.Account{acc1.Id: acc1, acc2.Id: acc2}
+	return map[string]*account.Account{acc1.Address: acc1, acc2.Address: acc2}
 }
 
 func (s *server) ExecuteTrunsaction(_ context.Context, in *pb.TransactionRequest) (*pb.TransactionReply, error) {
@@ -42,11 +40,8 @@ func (s *server) ExecuteTrunsaction(_ context.Context, in *pb.TransactionRequest
 
 	tr1 := block.CreateNewTransaction(0, in.GetFrom(), in.GetTo(), int(in.GetAmount()))
 	trs := []block.Transaction{*tr1}
-	s.bc.MineBlock("First Block", trs, s.accs)
+	s.bc.MineBlock("Execute Transaction To Create Block", trs, s.accs)
 
-	for _, acc := range s.accs {
-		log.Println(acc.String())
-	}
 	message := "Transaction from " + s.accs[in.GetFrom()].Name + " to " + s.accs[in.GetTo()].Name + " with amount " + strconv.Itoa(int(in.GetAmount()))
 	return &pb.TransactionReply{Message: message}, nil
 }

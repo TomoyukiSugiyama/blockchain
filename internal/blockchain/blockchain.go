@@ -3,13 +3,13 @@ package blockchain
 import (
 	"blockchain/internal/account"
 	"blockchain/internal/block"
+	"blockchain/internal/state"
 	"log"
 	"time"
 )
 
 type Blockchain struct {
-	Blocks       map[string]*block.Block
-	currentBlock *block.Block
+	State []*state.State
 }
 
 const tryLimit = 1000000
@@ -39,31 +39,28 @@ func (bc *Blockchain) createGenesisBlock() {
 		}
 	}
 
-	bc.Blocks = make(map[string]*block.Block)
-	bc.currentBlock = &genesisBlock
-	bc.Blocks[genesisBlock.Hash] = &genesisBlock
-	log.Println(bc.Blocks[genesisBlock.Hash].String())
+	bc.State = append(bc.State, state.CreateNewState(nil, &genesisBlock))
+	log.Println(bc.State[len(bc.State)-1].String())
 }
 
-func (bc *Blockchain) addBlock(b *block.Block, h string) {
+func (bc *Blockchain) addBlock(b *block.Block, h string, accs map[string]*account.Account) {
 	if !checkHash(h, difficulty) {
 		// Reject block
 		log.Fatalln("Block Rejected with hash: ", h)
 		return
 	}
 
-	if !isExistPreviousBlock(bc.Blocks, b.PrevHash) {
+	if !isExistPreviousBlock(bc.State[len(bc.State)-1].Block.Hash, b.PrevHash) {
 		// Reject block
 		log.Fatalln("Block Rejected")
 		return
 	}
 
-	bc.Blocks[h] = b
-	log.Println(bc.Blocks[h].String())
+	bc.State = append(bc.State, state.CreateNewState(accs, b))
 }
 
 func (bc *Blockchain) MineBlock(message string, trs []block.Transaction, accs map[string]*account.Account) {
-	newBlock := bc.currentBlock.GenerateBlock()
+	newBlock := bc.State[len(bc.State)-1].Block.GenerateBlock()
 	newBlock.Data = message
 	newBlock.Transactions = trs
 	for i := 0; i < tryLimit; i++ {
@@ -73,11 +70,11 @@ func (bc *Blockchain) MineBlock(message string, trs []block.Transaction, accs ma
 			break
 		}
 	}
-	bc.addBlock(newBlock, newBlock.Hash)
+	bc.addBlock(newBlock, newBlock.Hash, accs)
 	for _, t := range trs {
 		t.Run(accs)
 	}
-	bc.currentBlock = newBlock
+	log.Println(bc.State[len(bc.State)-1].String())
 }
 
 func checkHash(hash string, difficulty int) bool {
@@ -89,10 +86,6 @@ func checkHash(hash string, difficulty int) bool {
 	return true
 }
 
-func isExistPreviousBlock(blocks map[string]*block.Block, prevHash string) bool {
-	if _, ok := blocks[prevHash]; ok {
-		return true
-	}
-
-	return false
+func isExistPreviousBlock(hash string, prevHash string) bool {
+	return hash == prevHash
 }
