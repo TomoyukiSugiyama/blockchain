@@ -2,13 +2,33 @@ syntax = "proto3";
 option go_package = "./proto";
 
 service Node {
-  rpc ResisterNode (JoinRequest) returns (JoinReply) {}
+  rpc ResisterNode (ClientInfo) returns (JoinReply) {}
+  rpc Sync (SyncInfo) returns (SyncReply) {}
+  rpc Upload (stream FileChunk) returns (UploadStatus) {}
 }
 
-message JoinRequest {
+message ClientInfo {
     string id = 1;
+    string address = 2;
 }
 
 message JoinReply {
+    string message = 1;
+}
+
+message SyncInfo {
+    string id = 1;
+    string type = 2;
+}
+
+message SyncReply {
+    string message = 1;
+}
+
+message FileChunk {
+    bytes content = 1;
+}
+
+message UploadStatus {
     string message = 1;
 }

@@ -2,10 +2,15 @@ package server
 
 import (
 	"blockchain/internal/blockchain"
+	"blockchain/internal/state"
 	"context"
+	"io"
 	"log"
 	"net"
+	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"blockchain/internal/account"
@@ -22,8 +27,9 @@ const nodeAddress = "127.0.0.1:9090"
 type server struct {
 	pb.UnimplementedBlockchainServer
 	pb.UnimplementedNodeServer
-	bc   *blockchain.Blockchain
-	accs map[string]*account.Account
+	bc    *blockchain.Blockchain
+	accs  map[string]*account.Account
+	nodes map[string]string
 }
 
 // Test function
@@ -46,20 +52,78 @@ func (s *server) ExecuteTrunsaction(_ context.Context, in *pb.TransactionRequest
 	return &pb.TransactionReply{Message: message}, nil
 }
 
-func (s *server) ResisterNode(_ context.Context, in *pb.JoinRequest) (*pb.JoinReply, error) {
+func (s *server) ResisterNode(_ context.Context, in *pb.ClientInfo) (*pb.JoinReply, error) {
 	log.Printf("Node connected: %s", in.GetId())
+	log.Printf("Node address: %s", in.GetAddress())
+	s.nodes = make(map[string]string)
+	s.nodes[in.GetId()] = in.GetAddress()
 	return &pb.JoinReply{Message: "Welcome to the blockchain"}, nil
 }
 
+func (s *server) Sync(_ context.Context, in *pb.SyncInfo) (*pb.SyncReply, error) {
+	log.Printf("Client id: %s", in.GetId())
+	log.Printf("Sync mode: %s", in.GetType())
+
+	clientAddress := s.nodes[in.GetId()]
+
+	go func() {
+		// Connect to client node
+		conn, err := grpc.NewClient(clientAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Fatalf("did not connect: %v", err)
+		}
+		defer conn.Close()
+
+		c := pb.NewNodeClient(conn)
+		stream, err := c.Upload(context.Background())
+		if err != nil {
+			log.Fatalf("could not upload: %v", err)
+		}
+		for _, state := range s.bc.State {
+			log.Printf("Syncing: %s", state.String())
+			err := stream.Send(&pb.FileChunk{Content: state.ToJson()})
+			if err != nil {
+				log.Fatalf("could not send: %v", err)
+			}
+		}
+		_, err = stream.CloseAndRecv()
+		if err != nil {
+			log.Fatalf("could not close: %v", err)
+		}
+		log.Printf("Sync Success")
+	}()
+
+	return &pb.SyncReply{Message: "Start to Sync"}, nil
+}
+
+func (s *server) Upload(stream pb.Node_UploadServer) error {
+	for {
+		in, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&pb.UploadStatus{Message: "Upload Success"})
+		}
+
+		if err != nil {
+			log.Fatalf("could not upload: %v", err)
+		}
+		s.bc.State = append(s.bc.State, &state.State{})
+		s.bc.State[len(s.bc.State)-1].FromJson(in.GetContent())
+		log.Printf("Received: %s", in.GetContent())
+		log.Printf("State: %s", s.bc.State[len(s.bc.State)-1].String())
+
+	}
+
+}
+
 func StartServer() {
+	bc := blockchain.NewBlockchain()
+	accs := InitAccount()
+
 	clientListener, err := net.Listen("tcp", clientAddress)
 	if err != nil {
 		panic(err)
 	}
 	defer clientListener.Close()
-
-	bc := blockchain.NewBlockchain()
-	accs := InitAccount()
 	c := grpc.NewServer()
 	pb.RegisterBlockchainServer(c, &server{bc: bc, accs: accs})
 	log.Printf("Starting client server on %s", clientAddress)
@@ -78,7 +142,11 @@ func StartServer() {
 	}
 }
 
+const clientId = "client0123"
+const clientNodeAddress = "127.0.0.1:9091"
+
 func StartClientServer() {
+	// Register node
 	conn, err := grpc.NewClient(nodeAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
@@ -88,9 +156,33 @@ func StartClientServer() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := c.ResisterNode(ctx, &pb.JoinRequest{Id: "client0123"})
+	r, err := c.ResisterNode(ctx, &pb.ClientInfo{Id: clientId, Address: clientNodeAddress})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
-	log.Printf("Reply: %s", r.GetMessage())
+	log.Printf("Resister: %s", r.GetMessage())
+
+	// Start client node
+	nodeListener, err := net.Listen("tcp", clientNodeAddress)
+	if err != nil {
+		panic(err)
+	}
+	defer nodeListener.Close()
+	clientServer := grpc.NewServer()
+	pb.RegisterNodeServer(clientServer, &server{bc: &blockchain.Blockchain{}, accs: map[string]*account.Account{}})
+	log.Printf("Starting client node on %s", clientNodeAddress)
+	go clientServer.Serve(nodeListener)
+
+	// Sync
+	s, err := c.Sync(ctx, &pb.SyncInfo{Id: clientId, Type: "full"})
+	if err != nil {
+		log.Fatalf("could not sync: %v", err)
+	}
+	log.Printf("Sync: %s", s.GetMessage())
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+	<-quit
+
+	log.Println("Server exiting")
 }

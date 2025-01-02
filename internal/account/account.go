@@ -6,9 +6,9 @@ import (
 )
 
 type Account struct {
-	Address string
-	Name    string
-	Balance int
+	Address string `json:"address"`
+	Name    string `json:"name"`
+	Balance int    `json:"balance"`
 }
 
 func CreateNewAccount(address string, name string, balance int) *Account {

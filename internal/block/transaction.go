@@ -8,10 +8,10 @@ import (
 )
 
 type Transaction struct {
-	Id     int
-	From   string
-	To     string
-	Amount int
+	Id     int    `json:"id"`
+	From   string `json:"from"`
+	To     string `json:"to"`
+	Amount int    `json:"amount"`
 }
 
 func CreateNewTransaction(id int, from, to string, amount int) *Transaction {

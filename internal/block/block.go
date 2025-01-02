@@ -9,13 +9,13 @@ import (
 )
 
 type Block struct {
-	Index        int
-	Timestamp    string
-	Nonce        int
-	Data         string
-	PrevHash     string
-	Hash         string
-	Transactions []Transaction
+	Index        int           `json:"index"`
+	Timestamp    string        `json:"timestamp"`
+	Nonce        int           `json:"nonce"`
+	Data         string        `json:"data"`
+	PrevHash     string        `json:"prevHash"`
+	Hash         string        `json:"hash"`
+	Transactions []Transaction `json:"transactions"`
 }
 
 func (b *Block) String() string {
