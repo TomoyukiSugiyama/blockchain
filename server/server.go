@@ -117,7 +117,9 @@ func (s *server) Upload(stream pb.Node_UploadServer) error {
 
 func StartServer() {
 	bc := blockchain.NewBlockchain()
+	bc.CreateGenesisBlock()
 	accs := InitAccount()
+	server := server{bc: bc, accs: accs}
 
 	clientListener, err := net.Listen("tcp", clientAddress)
 	if err != nil {
@@ -125,7 +127,7 @@ func StartServer() {
 	}
 	defer clientListener.Close()
 	c := grpc.NewServer()
-	pb.RegisterBlockchainServer(c, &server{bc: bc, accs: accs})
+	pb.RegisterBlockchainServer(c, &server)
 	log.Printf("Starting client server on %s", clientAddress)
 	go c.Serve(clientListener)
 
@@ -135,7 +137,7 @@ func StartServer() {
 	}
 	defer nodeListener.Close()
 	s := grpc.NewServer()
-	pb.RegisterNodeServer(s, &server{bc: bc, accs: accs})
+	pb.RegisterNodeServer(s, &server)
 	log.Printf("Starting node server on %s", nodeAddress)
 	if err := s.Serve(nodeListener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
@@ -147,7 +149,7 @@ const clientNodeAddress = "127.0.0.1:9091"
 const transactionAddress = "127.0.0.1:8081"
 
 func StartClientServer() {
-	server := server{bc: &blockchain.Blockchain{}, accs: map[string]*account.Account{}}
+	server := server{bc: blockchain.NewBlockchain(), accs: map[string]*account.Account{}}
 	// Register node
 	conn, err := grpc.NewClient(nodeAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {

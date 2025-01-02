@@ -17,12 +17,11 @@ const difficulty = 4
 
 func NewBlockchain() *Blockchain {
 	bc := &Blockchain{}
-	bc.createGenesisBlock()
 
 	return bc
 }
 
-func (bc *Blockchain) createGenesisBlock() {
+func (bc *Blockchain) CreateGenesisBlock() {
 	genesisBlock := block.Block{
 		Index:     0,
 		Timestamp: time.Now().String(),
