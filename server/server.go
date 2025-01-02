@@ -21,9 +21,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// const clientAddress = "127.0.0.1:8080"
-// const nodeAddress = "127.0.0.1:9090"
-
 type server struct {
 	pb.UnimplementedBlockchainServer
 	pb.UnimplementedNodeServer
@@ -149,9 +146,6 @@ func StartServer(clientAddress, nodeAddress string) {
 }
 
 const clientId = "client0123"
-
-// const clientNodeAddress = "127.0.0.1:9091"
-// const transactionAddress = "127.0.0.1:8081"
 
 func StartClientServer(rootAddress, clientAddress, nodeAddress string) {
 	server := server{bc: blockchain.NewBlockchain(), accs: map[string]*account.Account{}}
