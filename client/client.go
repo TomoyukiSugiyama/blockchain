@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"context"
@@ -11,10 +11,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-const address = "127.0.0.1:8080"
-
-func main() {
-	conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func Run(targetServerAddress string) {
+	conn, err := grpc.NewClient(targetServerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}

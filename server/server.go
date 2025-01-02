@@ -108,9 +108,9 @@ func (s *server) Upload(stream pb.Node_UploadServer) error {
 		}
 		s.bc.State = append(s.bc.State, &state.State{})
 		s.bc.State[len(s.bc.State)-1].FromJson(in.GetContent())
+		s.accs = s.bc.State[len(s.bc.State)-1].Accounts
 		log.Printf("Received: %s", in.GetContent())
 		log.Printf("State: %s", s.bc.State[len(s.bc.State)-1].String())
-
 	}
 
 }
@@ -144,8 +144,10 @@ func StartServer() {
 
 const clientId = "client0123"
 const clientNodeAddress = "127.0.0.1:9091"
+const transactionAddress = "127.0.0.1:8081"
 
 func StartClientServer() {
+	server := server{bc: &blockchain.Blockchain{}, accs: map[string]*account.Account{}}
 	// Register node
 	conn, err := grpc.NewClient(nodeAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -169,7 +171,7 @@ func StartClientServer() {
 	}
 	defer nodeListener.Close()
 	clientServer := grpc.NewServer()
-	pb.RegisterNodeServer(clientServer, &server{bc: &blockchain.Blockchain{}, accs: map[string]*account.Account{}})
+	pb.RegisterNodeServer(clientServer, &server)
 	log.Printf("Starting client node on %s", clientNodeAddress)
 	go clientServer.Serve(nodeListener)
 
@@ -179,6 +181,17 @@ func StartClientServer() {
 		log.Fatalf("could not sync: %v", err)
 	}
 	log.Printf("Sync: %s", s.GetMessage())
+
+	// Start transaction server
+	clientListener, err := net.Listen("tcp", transactionAddress)
+	if err != nil {
+		panic(err)
+	}
+	defer clientListener.Close()
+	toClient := grpc.NewServer()
+	pb.RegisterBlockchainServer(toClient, &server)
+	log.Printf("Starting client server on %s", transactionAddress)
+	go toClient.Serve(clientListener)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)

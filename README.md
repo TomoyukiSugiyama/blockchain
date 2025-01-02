@@ -11,12 +11,12 @@ protoc --go_out=. --go_opt=paths=source_relative \
 ## server
 ```bash
 # master server
-go run cli/main.go -type master
+go run cli/main.go -mode server -type master
 # client server
-go run cli/main.go -type client
+go run cli/main.go -mode server -type client
 ```
 
 ### client
 ```bash
-go run client/client.go
+go run cli/main.go -mode client -address 127.0.0.1:8080
 ```
