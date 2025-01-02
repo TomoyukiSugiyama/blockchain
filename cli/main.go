@@ -10,11 +10,14 @@ import (
 func main() {
 	mode := flag.String("mode", "server", "server or client")
 	serverType := flag.String("type", "master", "master or client")
+	clientAddress := flag.String("clientAddress", "127.0.0.1:8080", "node address")
+	rootAddress := flag.String("rootAddress", "127.0.0.1:9090", "node address")
+	nodeAddress := flag.String("nodeAddress", "127.0.0.1:9090", "node address")
 	targetNodeAddress := flag.String("address", "127.0.0.1:8080", "target address")
 	flag.Parse()
 
 	if *mode == "server" {
-		serverMode(*serverType)
+		serverMode(*serverType, *rootAddress, *clientAddress, *nodeAddress)
 	} else if *mode == "client" {
 		clientMode(*targetNodeAddress)
 	} else {
@@ -22,11 +25,11 @@ func main() {
 	}
 }
 
-func serverMode(serverType string) {
+func serverMode(serverType string, rootAddress string, clientAddress string, nodeAddress string) {
 	if serverType == "master" {
-		server.StartServer()
+		server.StartServer(clientAddress, nodeAddress)
 	} else if serverType == "client" {
-		server.StartClientServer()
+		server.StartClientServer(rootAddress, clientAddress, nodeAddress)
 	} else {
 		fmt.Println("Invalid server type")
 	}

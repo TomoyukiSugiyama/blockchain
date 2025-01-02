@@ -21,8 +21,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-const clientAddress = "127.0.0.1:8080"
-const nodeAddress = "127.0.0.1:9090"
+// const clientAddress = "127.0.0.1:8080"
+// const nodeAddress = "127.0.0.1:9090"
 
 type server struct {
 	pb.UnimplementedBlockchainServer
@@ -115,11 +115,21 @@ func (s *server) Upload(stream pb.Node_UploadServer) error {
 
 }
 
-func StartServer() {
+func StartServer(clientAddress, nodeAddress string) {
 	bc := blockchain.NewBlockchain()
 	bc.CreateGenesisBlock()
 	accs := InitAccount()
 	server := server{bc: bc, accs: accs}
+
+	nodeListener, err := net.Listen("tcp", nodeAddress)
+	if err != nil {
+		panic(err)
+	}
+	defer nodeListener.Close()
+	s := grpc.NewServer()
+	pb.RegisterNodeServer(s, &server)
+	log.Printf("Starting node server on %s", nodeAddress)
+	go s.Serve(nodeListener)
 
 	clientListener, err := net.Listen("tcp", clientAddress)
 	if err != nil {
@@ -131,27 +141,22 @@ func StartServer() {
 	log.Printf("Starting client server on %s", clientAddress)
 	go c.Serve(clientListener)
 
-	nodeListener, err := net.Listen("tcp", nodeAddress)
-	if err != nil {
-		panic(err)
-	}
-	defer nodeListener.Close()
-	s := grpc.NewServer()
-	pb.RegisterNodeServer(s, &server)
-	log.Printf("Starting node server on %s", nodeAddress)
-	if err := s.Serve(nodeListener); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+	<-quit
+
+	log.Println("Server exiting")
 }
 
 const clientId = "client0123"
-const clientNodeAddress = "127.0.0.1:9091"
-const transactionAddress = "127.0.0.1:8081"
 
-func StartClientServer() {
+// const clientNodeAddress = "127.0.0.1:9091"
+// const transactionAddress = "127.0.0.1:8081"
+
+func StartClientServer(rootAddress, clientAddress, nodeAddress string) {
 	server := server{bc: blockchain.NewBlockchain(), accs: map[string]*account.Account{}}
 	// Register node
-	conn, err := grpc.NewClient(nodeAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(rootAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
@@ -160,21 +165,21 @@ func StartClientServer() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := c.ResisterNode(ctx, &pb.ClientInfo{Id: clientId, Address: clientNodeAddress})
+	r, err := c.ResisterNode(ctx, &pb.ClientInfo{Id: clientId, Address: nodeAddress})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
 	log.Printf("Resister: %s", r.GetMessage())
 
 	// Start client node
-	nodeListener, err := net.Listen("tcp", clientNodeAddress)
+	nodeListener, err := net.Listen("tcp", nodeAddress)
 	if err != nil {
 		panic(err)
 	}
 	defer nodeListener.Close()
 	clientServer := grpc.NewServer()
 	pb.RegisterNodeServer(clientServer, &server)
-	log.Printf("Starting client node on %s", clientNodeAddress)
+	log.Printf("Starting client node on %s", nodeAddress)
 	go clientServer.Serve(nodeListener)
 
 	// Sync
@@ -185,14 +190,14 @@ func StartClientServer() {
 	log.Printf("Sync: %s", s.GetMessage())
 
 	// Start transaction server
-	clientListener, err := net.Listen("tcp", transactionAddress)
+	clientListener, err := net.Listen("tcp", clientAddress)
 	if err != nil {
 		panic(err)
 	}
 	defer clientListener.Close()
 	toClient := grpc.NewServer()
 	pb.RegisterBlockchainServer(toClient, &server)
-	log.Printf("Starting client server on %s", transactionAddress)
+	log.Printf("Starting client server on %s", clientAddress)
 	go toClient.Serve(clientListener)
 
 	quit := make(chan os.Signal, 1)
