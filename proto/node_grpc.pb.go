@@ -22,15 +22,17 @@ const (
 	Node_ResisterNode_FullMethodName = "/Node/ResisterNode"
 	Node_Sync_FullMethodName         = "/Node/Sync"
 	Node_Upload_FullMethodName       = "/Node/Upload"
+	Node_Bloadcast_FullMethodName    = "/Node/Bloadcast"
 )
 
 // NodeClient is the client API for Node service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type NodeClient interface {
-	ResisterNode(ctx context.Context, in *ClientInfo, opts ...grpc.CallOption) (*JoinReply, error)
+	ResisterNode(ctx context.Context, in *ClientInfo, opts ...grpc.CallOption) (*NodeInfo, error)
 	Sync(ctx context.Context, in *SyncInfo, opts ...grpc.CallOption) (*SyncReply, error)
 	Upload(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[FileChunk, UploadStatus], error)
+	Bloadcast(ctx context.Context, in *Transaction, opts ...grpc.CallOption) (*Verify, error)
 }
 
 type nodeClient struct {
@@ -41,9 +43,9 @@ func NewNodeClient(cc grpc.ClientConnInterface) NodeClient {
 	return &nodeClient{cc}
 }
 
-func (c *nodeClient) ResisterNode(ctx context.Context, in *ClientInfo, opts ...grpc.CallOption) (*JoinReply, error) {
+func (c *nodeClient) ResisterNode(ctx context.Context, in *ClientInfo, opts ...grpc.CallOption) (*NodeInfo, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(JoinReply)
+	out := new(NodeInfo)
 	err := c.cc.Invoke(ctx, Node_ResisterNode_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -74,13 +76,24 @@ func (c *nodeClient) Upload(ctx context.Context, opts ...grpc.CallOption) (grpc.
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Node_UploadClient = grpc.ClientStreamingClient[FileChunk, UploadStatus]
 
+func (c *nodeClient) Bloadcast(ctx context.Context, in *Transaction, opts ...grpc.CallOption) (*Verify, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Verify)
+	err := c.cc.Invoke(ctx, Node_Bloadcast_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NodeServer is the server API for Node service.
 // All implementations must embed UnimplementedNodeServer
 // for forward compatibility.
 type NodeServer interface {
-	ResisterNode(context.Context, *ClientInfo) (*JoinReply, error)
+	ResisterNode(context.Context, *ClientInfo) (*NodeInfo, error)
 	Sync(context.Context, *SyncInfo) (*SyncReply, error)
 	Upload(grpc.ClientStreamingServer[FileChunk, UploadStatus]) error
+	Bloadcast(context.Context, *Transaction) (*Verify, error)
 	mustEmbedUnimplementedNodeServer()
 }
 
@@ -91,7 +104,7 @@ type NodeServer interface {
 // pointer dereference when methods are called.
 type UnimplementedNodeServer struct{}
 
-func (UnimplementedNodeServer) ResisterNode(context.Context, *ClientInfo) (*JoinReply, error) {
+func (UnimplementedNodeServer) ResisterNode(context.Context, *ClientInfo) (*NodeInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResisterNode not implemented")
 }
 func (UnimplementedNodeServer) Sync(context.Context, *SyncInfo) (*SyncReply, error) {
@@ -99,6 +112,9 @@ func (UnimplementedNodeServer) Sync(context.Context, *SyncInfo) (*SyncReply, err
 }
 func (UnimplementedNodeServer) Upload(grpc.ClientStreamingServer[FileChunk, UploadStatus]) error {
 	return status.Errorf(codes.Unimplemented, "method Upload not implemented")
+}
+func (UnimplementedNodeServer) Bloadcast(context.Context, *Transaction) (*Verify, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Bloadcast not implemented")
 }
 func (UnimplementedNodeServer) mustEmbedUnimplementedNodeServer() {}
 func (UnimplementedNodeServer) testEmbeddedByValue()              {}
@@ -164,6 +180,24 @@ func _Node_Upload_Handler(srv interface{}, stream grpc.ServerStream) error {
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Node_UploadServer = grpc.ClientStreamingServer[FileChunk, UploadStatus]
 
+func _Node_Bloadcast_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Transaction)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServer).Bloadcast(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Node_Bloadcast_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServer).Bloadcast(ctx, req.(*Transaction))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Node_ServiceDesc is the grpc.ServiceDesc for Node service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -178,6 +212,10 @@ var Node_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Sync",
 			Handler:    _Node_Sync_Handler,
+		},
+		{
+			MethodName: "Bloadcast",
+			Handler:    _Node_Bloadcast_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

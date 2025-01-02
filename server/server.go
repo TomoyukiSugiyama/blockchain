@@ -24,9 +24,11 @@ import (
 type server struct {
 	pb.UnimplementedBlockchainServer
 	pb.UnimplementedNodeServer
-	bc    *blockchain.Blockchain
-	accs  map[string]*account.Account
-	nodes map[string]string
+	bc            *blockchain.Blockchain
+	accs          map[string]*account.Account
+	nodes         map[string]string
+	clientAddress string
+	nodeAddress   string
 }
 
 // Test function
@@ -49,12 +51,11 @@ func (s *server) ExecuteTrunsaction(_ context.Context, in *pb.TransactionRequest
 	return &pb.TransactionReply{Message: message}, nil
 }
 
-func (s *server) ResisterNode(_ context.Context, in *pb.ClientInfo) (*pb.JoinReply, error) {
-	log.Printf("Node connected: %s", in.GetId())
+func (s *server) ResisterNode(_ context.Context, in *pb.ClientInfo) (*pb.NodeInfo, error) {
+	log.Printf("Node id: %s", in.GetId())
 	log.Printf("Node address: %s", in.GetAddress())
-	s.nodes = make(map[string]string)
 	s.nodes[in.GetId()] = in.GetAddress()
-	return &pb.JoinReply{Message: "Welcome to the blockchain"}, nil
+	return &pb.NodeInfo{Id: "server@0123", Address: s.nodeAddress}, nil
 }
 
 func (s *server) Sync(_ context.Context, in *pb.SyncInfo) (*pb.SyncReply, error) {
@@ -116,7 +117,13 @@ func StartServer(clientAddress, nodeAddress string) {
 	bc := blockchain.NewBlockchain()
 	bc.CreateGenesisBlock()
 	accs := InitAccount()
-	server := server{bc: bc, accs: accs}
+	server := server{
+		bc:            bc,
+		accs:          accs,
+		clientAddress: clientAddress,
+		nodeAddress:   nodeAddress,
+		nodes:         map[string]string{},
+	}
 
 	nodeListener, err := net.Listen("tcp", nodeAddress)
 	if err != nil {
@@ -145,10 +152,16 @@ func StartServer(clientAddress, nodeAddress string) {
 	log.Println("Server exiting")
 }
 
-const clientId = "client0123"
+const clientId = "client@0123"
 
 func StartClientServer(rootAddress, clientAddress, nodeAddress string) {
-	server := server{bc: blockchain.NewBlockchain(), accs: map[string]*account.Account{}}
+	server := server{
+		bc:            blockchain.NewBlockchain(),
+		accs:          map[string]*account.Account{},
+		clientAddress: clientAddress,
+		nodeAddress:   nodeAddress,
+		nodes:         map[string]string{},
+	}
 	// Register node
 	conn, err := grpc.NewClient(rootAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -163,7 +176,9 @@ func StartClientServer(rootAddress, clientAddress, nodeAddress string) {
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
-	log.Printf("Resister: %s", r.GetMessage())
+	log.Printf("Node id: %s", r.GetId())
+	log.Printf("Node address: %s", r.GetAddress())
+	server.nodes[r.GetId()] = r.GetAddress()
 
 	// Start client node
 	nodeListener, err := net.Listen("tcp", nodeAddress)
