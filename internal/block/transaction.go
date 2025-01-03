@@ -2,6 +2,7 @@ package block
 
 import (
 	"blockchain/internal/account"
+	"encoding/json"
 	"log"
 	"strconv"
 	"strings"
@@ -48,4 +49,19 @@ func (t *Transaction) Run(accounts map[string]*account.Account) {
 	}
 	from.Balance -= t.Amount
 	to.Balance += t.Amount
+}
+
+func (t *Transaction) Bytes() []byte {
+	jsonData, err := json.Marshal(t)
+	if err != nil {
+		panic(err)
+	}
+	return jsonData
+}
+
+func (t *Transaction) FromJson(data []byte) {
+	err := json.Unmarshal(data, t)
+	if err != nil {
+		panic(err)
+	}
 }

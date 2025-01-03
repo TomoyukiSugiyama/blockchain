@@ -44,11 +44,40 @@ func (s *server) ExecuteTrunsaction(_ context.Context, in *pb.TransactionRequest
 	log.Printf("Amount: %d", in.GetAmount())
 
 	tr1 := block.CreateNewTransaction(0, in.GetFrom(), in.GetTo(), int(in.GetAmount()))
+	s.bloadcastTransaction(*tr1)
 	trs := []block.Transaction{*tr1}
 	s.bc.MineBlock("Execute Transaction To Create Block", trs, s.accs)
 
 	message := "Transaction from " + s.accs[in.GetFrom()].Name + " to " + s.accs[in.GetTo()].Name + " with amount " + strconv.Itoa(int(in.GetAmount()))
 	return &pb.TransactionReply{Message: message}, nil
+}
+
+func (s *server) bloadcastTransaction(tr block.Transaction) {
+	for _, node := range s.nodes {
+		go func() {
+			// Connect to client node
+			conn, err := grpc.NewClient(node, grpc.WithTransportCredentials(insecure.NewCredentials()))
+			if err != nil {
+				log.Fatalf("did not connect: %v", err)
+			}
+			defer conn.Close()
+
+			n := pb.NewNodeClient(conn)
+			b, err := n.Bloadcast(context.Background(), &pb.Transaction{Content: tr.Bytes()})
+			if err != nil {
+				log.Fatalf("could not bloadcast: %v", err)
+			}
+			log.Printf("Bloadcast: %v", b.GetValid())
+		}()
+	}
+}
+
+func (s *server) Bloadcast(_ context.Context, in *pb.Transaction) (*pb.Verify, error) {
+	log.Printf("Received: %s", in.GetContent())
+	tr := block.Transaction{}
+	tr.FromJson(in.GetContent())
+	log.Printf("Transaction: %s", tr.String())
+	return &pb.Verify{Valid: true}, nil
 }
 
 func (s *server) ResisterNode(_ context.Context, in *pb.ClientInfo) (*pb.NodeInfo, error) {
