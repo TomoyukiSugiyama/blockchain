@@ -18,5 +18,8 @@ go run cli/main.go -mode server -type client -clientAddress 127.0.0.1:8081 -node
 
 ### client
 ```bash
+# request to master node
 go run cli/main.go -mode client -address 127.0.0.1:8080
+# request to client node
+go run cli/main.go -mode client -address 127.0.0.1:8081
 ```
