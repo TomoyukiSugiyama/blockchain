@@ -4,6 +4,7 @@ import (
 	"blockchain/internal/account"
 	"blockchain/internal/block"
 	"blockchain/internal/state"
+	"blockchain/internal/transaction"
 	"log"
 	"time"
 )
@@ -58,7 +59,7 @@ func (bc *Blockchain) addBlock(b *block.Block, h string, accs map[string]*accoun
 	bc.State = append(bc.State, state.CreateNewState(accs, b))
 }
 
-func (bc *Blockchain) MineBlock(message string, trs []block.Transaction, accs map[string]*account.Account) {
+func (bc *Blockchain) MineBlock(message string, trs []transaction.Transaction, accs map[string]*account.Account) {
 	newBlock := bc.State[len(bc.State)-1].Block.GenerateBlock()
 	newBlock.Data = message
 	newBlock.Transactions = trs

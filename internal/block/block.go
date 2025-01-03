@@ -1,6 +1,7 @@
 package block
 
 import (
+	"blockchain/internal/transaction"
 	"crypto/sha256"
 	"encoding/hex"
 	"strconv"
@@ -9,13 +10,13 @@ import (
 )
 
 type Block struct {
-	Index        int           `json:"index"`
-	Timestamp    string        `json:"timestamp"`
-	Nonce        int           `json:"nonce"`
-	Data         string        `json:"data"`
-	PrevHash     string        `json:"prevHash"`
-	Hash         string        `json:"hash"`
-	Transactions []Transaction `json:"transactions"`
+	Index        int                       `json:"index"`
+	Timestamp    string                    `json:"timestamp"`
+	Nonce        int                       `json:"nonce"`
+	Data         string                    `json:"data"`
+	PrevHash     string                    `json:"prevHash"`
+	Hash         string                    `json:"hash"`
+	Transactions []transaction.Transaction `json:"transactions"`
 }
 
 func (b *Block) String() string {

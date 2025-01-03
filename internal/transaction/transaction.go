@@ -1,4 +1,4 @@
-package block
+package transaction
 
 import (
 	"blockchain/internal/account"

@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"blockchain/internal/account"
-	"blockchain/internal/block"
+	"blockchain/internal/transaction"
 	pb "blockchain/proto"
 
 	"google.golang.org/grpc"
@@ -43,16 +43,16 @@ func (s *server) ExecuteTrunsaction(_ context.Context, in *pb.TransactionRequest
 	log.Printf("Transaction from %s to %s", in.GetFrom(), in.GetTo())
 	log.Printf("Amount: %d", in.GetAmount())
 
-	tr1 := block.CreateNewTransaction(0, in.GetFrom(), in.GetTo(), int(in.GetAmount()))
+	tr1 := transaction.CreateNewTransaction(0, in.GetFrom(), in.GetTo(), int(in.GetAmount()))
 	s.bloadcastTransaction(*tr1)
-	trs := []block.Transaction{*tr1}
+	trs := []transaction.Transaction{*tr1}
 	s.bc.MineBlock("Execute Transaction To Create Block", trs, s.accs)
 
 	message := "Transaction from " + s.accs[in.GetFrom()].Name + " to " + s.accs[in.GetTo()].Name + " with amount " + strconv.Itoa(int(in.GetAmount()))
 	return &pb.TransactionReply{Message: message}, nil
 }
 
-func (s *server) bloadcastTransaction(tr block.Transaction) {
+func (s *server) bloadcastTransaction(tr transaction.Transaction) {
 	for _, node := range s.nodes {
 		go func() {
 			// Connect to client node
@@ -74,7 +74,7 @@ func (s *server) bloadcastTransaction(tr block.Transaction) {
 
 func (s *server) Bloadcast(_ context.Context, in *pb.Transaction) (*pb.Verify, error) {
 	log.Printf("Received: %s", in.GetContent())
-	tr := block.Transaction{}
+	tr := transaction.Transaction{}
 	tr.FromJson(in.GetContent())
 	log.Printf("Transaction: %s", tr.String())
 	return &pb.Verify{Valid: true}, nil
