@@ -51,7 +51,7 @@ func (t *Transaction) Run(accounts map[string]*account.Account) {
 	to.Balance += t.Amount
 }
 
-func (t *Transaction) Bytes() []byte {
+func (t *Transaction) ToJson() []byte {
 	jsonData, err := json.Marshal(t)
 	if err != nil {
 		panic(err)

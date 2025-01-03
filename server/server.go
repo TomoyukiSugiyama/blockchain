@@ -63,7 +63,7 @@ func (s *server) bloadcastTransaction(tr transaction.Transaction) {
 			defer conn.Close()
 
 			n := pb.NewNodeClient(conn)
-			b, err := n.Bloadcast(context.Background(), &pb.Transaction{Content: tr.Bytes()})
+			b, err := n.Bloadcast(context.Background(), &pb.Transaction{Content: tr.ToJson()})
 			if err != nil {
 				log.Fatalf("could not bloadcast: %v", err)
 			}

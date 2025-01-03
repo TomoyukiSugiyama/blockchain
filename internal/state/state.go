@@ -28,16 +28,6 @@ func (s *State) String() string {
 	return strings.Join(lines, "\n")
 }
 
-func (s *State) Bytes() []byte {
-	var lines []string
-	lines = append(lines, s.Block.String())
-	for _, acc := range s.Accounts {
-		lines = append(lines, acc.String())
-	}
-
-	return []byte(strings.Join(lines, "\n"))
-}
-
 func (s *State) ToJson() []byte {
 	jsonData, err := json.Marshal(s)
 	if err != nil {
