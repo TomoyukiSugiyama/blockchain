@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Node_ResisterNode_FullMethodName = "/Node/ResisterNode"
-	Node_Sync_FullMethodName         = "/Node/Sync"
-	Node_Upload_FullMethodName       = "/Node/Upload"
-	Node_Bloadcast_FullMethodName    = "/Node/Bloadcast"
+	Node_ResisterNode_FullMethodName   = "/Node/ResisterNode"
+	Node_Sync_FullMethodName           = "/Node/Sync"
+	Node_Upload_FullMethodName         = "/Node/Upload"
+	Node_Bloadcast_FullMethodName      = "/Node/Bloadcast"
+	Node_BloadcastBlock_FullMethodName = "/Node/BloadcastBlock"
 )
 
 // NodeClient is the client API for Node service.
@@ -33,6 +34,7 @@ type NodeClient interface {
 	Sync(ctx context.Context, in *SyncInfo, opts ...grpc.CallOption) (*SyncReply, error)
 	Upload(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[FileChunk, UploadStatus], error)
 	Bloadcast(ctx context.Context, in *Transaction, opts ...grpc.CallOption) (*Verify, error)
+	BloadcastBlock(ctx context.Context, in *Block, opts ...grpc.CallOption) (*VerifyBlock, error)
 }
 
 type nodeClient struct {
@@ -86,6 +88,16 @@ func (c *nodeClient) Bloadcast(ctx context.Context, in *Transaction, opts ...grp
 	return out, nil
 }
 
+func (c *nodeClient) BloadcastBlock(ctx context.Context, in *Block, opts ...grpc.CallOption) (*VerifyBlock, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VerifyBlock)
+	err := c.cc.Invoke(ctx, Node_BloadcastBlock_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NodeServer is the server API for Node service.
 // All implementations must embed UnimplementedNodeServer
 // for forward compatibility.
@@ -94,6 +106,7 @@ type NodeServer interface {
 	Sync(context.Context, *SyncInfo) (*SyncReply, error)
 	Upload(grpc.ClientStreamingServer[FileChunk, UploadStatus]) error
 	Bloadcast(context.Context, *Transaction) (*Verify, error)
+	BloadcastBlock(context.Context, *Block) (*VerifyBlock, error)
 	mustEmbedUnimplementedNodeServer()
 }
 
@@ -115,6 +128,9 @@ func (UnimplementedNodeServer) Upload(grpc.ClientStreamingServer[FileChunk, Uplo
 }
 func (UnimplementedNodeServer) Bloadcast(context.Context, *Transaction) (*Verify, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Bloadcast not implemented")
+}
+func (UnimplementedNodeServer) BloadcastBlock(context.Context, *Block) (*VerifyBlock, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BloadcastBlock not implemented")
 }
 func (UnimplementedNodeServer) mustEmbedUnimplementedNodeServer() {}
 func (UnimplementedNodeServer) testEmbeddedByValue()              {}
@@ -198,6 +214,24 @@ func _Node_Bloadcast_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Node_BloadcastBlock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Block)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServer).BloadcastBlock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Node_BloadcastBlock_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServer).BloadcastBlock(ctx, req.(*Block))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Node_ServiceDesc is the grpc.ServiceDesc for Node service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -216,6 +250,10 @@ var Node_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Bloadcast",
 			Handler:    _Node_Bloadcast_Handler,
+		},
+		{
+			MethodName: "BloadcastBlock",
+			Handler:    _Node_BloadcastBlock_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

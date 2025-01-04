@@ -1,6 +1,7 @@
 package server
 
 import (
+	"blockchain/internal/block"
 	"blockchain/internal/blockchain"
 	"blockchain/internal/state"
 	"context"
@@ -29,6 +30,7 @@ type server struct {
 	nodes         map[string]string
 	clientAddress string
 	nodeAddress   string
+	tp            *transaction.TransactionPool
 }
 
 // Test function
@@ -45,9 +47,11 @@ func (s *server) ExecuteTrunsaction(_ context.Context, in *pb.TransactionRequest
 
 	tr1 := transaction.CreateNewTransaction(0, in.GetFrom(), in.GetTo(), int(in.GetAmount()))
 	s.bloadcastTransaction(*tr1)
+	s.tp.Push(tr1)
 	trs := []transaction.Transaction{*tr1}
-	s.bc.MineBlock("Execute Transaction To Create Block", trs, s.accs)
-
+	b := s.bc.MineBlock("Execute Transaction To Create Block", trs, s.accs)
+	s.bloadcastVerifyBlock(b)
+	s.bc.AddBlock(b, b.Hash, s.accs)
 	message := "Transaction from " + s.accs[in.GetFrom()].Name + " to " + s.accs[in.GetTo()].Name + " with amount " + strconv.Itoa(int(in.GetAmount()))
 	return &pb.TransactionReply{Message: message}, nil
 }
@@ -77,7 +81,49 @@ func (s *server) Bloadcast(_ context.Context, in *pb.Transaction) (*pb.Verify, e
 	tr := transaction.Transaction{}
 	tr.FromJson(in.GetContent())
 	log.Printf("Transaction: %s", tr.String())
+	if !validateTransaction(tr) {
+		return &pb.Verify{Valid: false}, nil
+	}
+
+	s.tp.Push(&tr)
 	return &pb.Verify{Valid: true}, nil
+}
+
+func (s *server) bloadcastVerifyBlock(b *block.Block) {
+	for _, node := range s.nodes {
+		go func() {
+			// Connect to client node
+			conn, err := grpc.NewClient(node, grpc.WithTransportCredentials(insecure.NewCredentials()))
+			if err != nil {
+				log.Fatalf("did not connect: %v", err)
+			}
+			defer conn.Close()
+
+			n := pb.NewNodeClient(conn)
+			bloadcast, err := n.BloadcastBlock(context.Background(), &pb.Block{Content: b.ToJson()})
+			if err != nil {
+				log.Fatalf("could not bloadcast: %v", err)
+			}
+			log.Printf("Bloadcast: %v", bloadcast.GetValid())
+		}()
+	}
+}
+
+func (s *server) BloadcastBlock(_ context.Context, in *pb.Block) (*pb.VerifyBlock, error) {
+	log.Printf("Received: %s", in.GetContent())
+	b := block.Block{}
+	b.FromJson(in.GetContent())
+	log.Printf("Block: %s", b.String())
+	// TODO: Validate block
+	s.bc.AddBlock(&b, b.Hash, s.accs)
+	return &pb.VerifyBlock{Valid: true}, nil
+}
+
+func validateTransaction(tr transaction.Transaction) bool {
+	if tr.From == "" || tr.To == "" || tr.Amount <= 0 {
+		return false
+	}
+	return true
 }
 
 func (s *server) ResisterNode(_ context.Context, in *pb.ClientInfo) (*pb.NodeInfo, error) {
@@ -145,13 +191,13 @@ func (s *server) Upload(stream pb.Node_UploadServer) error {
 func StartServer(clientAddress, nodeAddress string) {
 	bc := blockchain.NewBlockchain()
 	bc.CreateGenesisBlock()
-	accs := InitAccount()
 	server := server{
 		bc:            bc,
-		accs:          accs,
+		accs:          InitAccount(),
 		clientAddress: clientAddress,
 		nodeAddress:   nodeAddress,
 		nodes:         map[string]string{},
+		tp:            transaction.NewTransactionPool(),
 	}
 
 	nodeListener, err := net.Listen("tcp", nodeAddress)
@@ -190,6 +236,7 @@ func StartClientServer(rootAddress, clientAddress, nodeAddress string) {
 		clientAddress: clientAddress,
 		nodeAddress:   nodeAddress,
 		nodes:         map[string]string{},
+		tp:            transaction.NewTransactionPool(),
 	}
 	// Register node
 	conn, err := grpc.NewClient(rootAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))

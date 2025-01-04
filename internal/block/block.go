@@ -4,6 +4,7 @@ import (
 	"blockchain/internal/transaction"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"strconv"
 	"strings"
 	"time"
@@ -54,4 +55,19 @@ func (b *Block) GenerateBlock() *Block {
 		PrevHash:  b.Hash,
 	}
 	return newBlock
+}
+
+func (b *Block) ToJson() []byte {
+	jsonData, err := json.Marshal(b)
+	if err != nil {
+		panic(err)
+	}
+	return jsonData
+}
+
+func (b *Block) FromJson(data []byte) {
+	err := json.Unmarshal(data, b)
+	if err != nil {
+		panic(err)
+	}
 }

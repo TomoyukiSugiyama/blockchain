@@ -43,7 +43,7 @@ func (bc *Blockchain) CreateGenesisBlock() {
 	log.Println(bc.State[len(bc.State)-1].String())
 }
 
-func (bc *Blockchain) addBlock(b *block.Block, h string, accs map[string]*account.Account) {
+func (bc *Blockchain) AddBlock(b *block.Block, h string, accs map[string]*account.Account) {
 	if !checkHash(h, difficulty) {
 		// Reject block
 		log.Fatalln("Block Rejected with hash: ", h)
@@ -57,9 +57,13 @@ func (bc *Blockchain) addBlock(b *block.Block, h string, accs map[string]*accoun
 	}
 
 	bc.State = append(bc.State, state.CreateNewState(accs, b))
+	for _, t := range b.Transactions {
+		t.Run(accs)
+	}
+	log.Println(bc.State[len(bc.State)-1].String())
 }
 
-func (bc *Blockchain) MineBlock(message string, trs []transaction.Transaction, accs map[string]*account.Account) {
+func (bc *Blockchain) MineBlock(message string, trs []transaction.Transaction, accs map[string]*account.Account) *block.Block {
 	newBlock := bc.State[len(bc.State)-1].Block.GenerateBlock()
 	newBlock.Data = message
 	newBlock.Transactions = trs
@@ -70,11 +74,7 @@ func (bc *Blockchain) MineBlock(message string, trs []transaction.Transaction, a
 			break
 		}
 	}
-	bc.addBlock(newBlock, newBlock.Hash, accs)
-	for _, t := range trs {
-		t.Run(accs)
-	}
-	log.Println(bc.State[len(bc.State)-1].String())
+	return newBlock
 }
 
 func checkHash(hash string, difficulty int) bool {
