@@ -43,10 +43,10 @@ func (bc *Blockchain) CreateGenesisBlock(acc map[string]*account.Account) {
 	log.Println(bc.State[len(bc.State)-1].String())
 }
 
-func (bc *Blockchain) AddBlock(b *block.Block, h string, accs map[string]*account.Account) {
-	if !checkHash(h, difficulty) {
+func (bc *Blockchain) AddBlock(b *block.Block, txs []*transaction.Transaction, accs map[string]*account.Account) {
+	if !checkHash(b.Hash, difficulty) {
 		// Reject block
-		log.Fatalln("Block Rejected with hash: ", h)
+		log.Fatalln("Block Rejected with hash: ", b.Hash)
 		return
 	}
 
@@ -57,16 +57,17 @@ func (bc *Blockchain) AddBlock(b *block.Block, h string, accs map[string]*accoun
 	}
 
 	bc.State = append(bc.State, state.CreateNewState(accs, b))
-	for _, t := range b.Transactions {
+	log.Println("Transactions len", len(txs))
+	for _, t := range txs {
 		t.Run(accs)
 	}
 	log.Println(bc.State[len(bc.State)-1].String())
 }
 
-func (bc *Blockchain) MineBlock(message string, trs []transaction.Transaction, accs map[string]*account.Account) *block.Block {
+func (bc *Blockchain) MineBlock(message string, txs []byte, accs map[string]*account.Account) *block.Block {
 	newBlock := bc.State[len(bc.State)-1].Block.GenerateBlock()
 	newBlock.Data = message
-	newBlock.Transactions = trs
+	newBlock.TxsRootHash = txs
 	for i := 0; i < tryLimit; i++ {
 		newBlock.Nonce = i
 		newBlock.Hash = newBlock.CalculateHash()

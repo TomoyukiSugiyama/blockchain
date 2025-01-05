@@ -1,7 +1,11 @@
 package transaction
 
+import (
+	"blockchain/utils"
+)
+
 type TransactionPool struct {
-	Transactions []*Transaction
+	utxo []*Transaction
 }
 
 func NewTransactionPool() *TransactionPool {
@@ -10,13 +14,22 @@ func NewTransactionPool() *TransactionPool {
 }
 
 func (tp *TransactionPool) Push(t *Transaction) {
-	tp.Transactions = append(tp.Transactions, t)
+	tp.utxo = append(tp.utxo, t)
 }
 
-func (tp *TransactionPool) Pop() (x *Transaction) {
-	if len(tp.Transactions) == 0 {
-		return nil
+func (tp *TransactionPool) GetRootHash() []byte {
+	var txs [][]byte
+	for _, t := range tp.utxo {
+		txs = append(txs, t.ToJson())
 	}
-	x, tp.Transactions = tp.Transactions[0], tp.Transactions[1:]
-	return x
+
+	root := utils.BuildMerkleTree(txs)
+
+	return root.Hash
+}
+
+func (tp *TransactionPool) Pop() []*Transaction {
+	t := tp.utxo
+	tp.utxo = []*Transaction{}
+	return t
 }

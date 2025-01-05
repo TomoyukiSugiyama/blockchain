@@ -54,7 +54,7 @@ func (s *server) BloadcastBlock(_ context.Context, in *pb.Block) (*pb.VerifyBloc
 	b.FromJson(in.GetContent())
 	log.Printf("Block: %s", b.String())
 	// TODO: Validate block
-	s.bc.AddBlock(&b, b.Hash, s.accs)
+	s.bc.AddBlock(&b, s.tp.Pop(), s.accs)
 	return &pb.VerifyBlock{Valid: true}, nil
 }
 

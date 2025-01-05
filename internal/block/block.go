@@ -1,7 +1,6 @@
 package block
 
 import (
-	"blockchain/internal/transaction"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -11,13 +10,13 @@ import (
 )
 
 type Block struct {
-	Index        int                       `json:"index"`
-	Timestamp    string                    `json:"timestamp"`
-	Nonce        int                       `json:"nonce"`
-	Data         string                    `json:"data"`
-	PrevHash     string                    `json:"prevHash"`
-	Hash         string                    `json:"hash"`
-	Transactions []transaction.Transaction `json:"transactions"`
+	Index       int    `json:"index"`
+	Timestamp   string `json:"timestamp"`
+	Nonce       int    `json:"nonce"`
+	Data        string `json:"data"`
+	PrevHash    string `json:"prevHash"`
+	Hash        string `json:"hash"`
+	TxsRootHash []byte `json:"txsRootHash"`
 }
 
 func (b *Block) String() string {
@@ -29,17 +28,13 @@ func (b *Block) String() string {
 	lines = append(lines, "Data: "+b.Data)
 	lines = append(lines, "Previous Hash: "+b.PrevHash)
 	lines = append(lines, "Block Hash: "+b.Hash)
-	for _, t := range b.Transactions {
-		lines = append(lines, t.String())
-	}
+	lines = append(lines, "TxsRootHash: "+hex.EncodeToString(b.TxsRootHash))
+
 	return strings.Join(lines, "\n")
 }
 
 func (b *Block) CalculateHash() string {
-	record := strconv.Itoa(b.Index) + b.Timestamp + b.Data + b.PrevHash + strconv.Itoa(b.Nonce)
-	for _, t := range b.Transactions {
-		record += strconv.Itoa(t.Id) + t.From + t.To + strconv.Itoa(t.Amount)
-	}
+	record := strconv.Itoa(b.Index) + b.Timestamp + b.Data + b.PrevHash + strconv.Itoa(b.Nonce) + hex.EncodeToString(b.TxsRootHash)
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)

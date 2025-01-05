@@ -19,10 +19,12 @@ func (s *server) ExecuteTrunsaction(_ context.Context, in *pb.TransactionRequest
 	tr1 := transaction.CreateNewTransaction(0, in.GetFrom(), in.GetTo(), int(in.GetAmount()))
 	s.bloadcastTransaction(*tr1)
 	s.tp.Push(tr1)
-	trs := []transaction.Transaction{*tr1}
-	b := s.bc.MineBlock("Execute Transaction To Create Block", trs, s.accs)
+	rootHash := s.tp.GetRootHash()
+	log.Printf("Merkle Tree Root Hash: %x", rootHash)
+
+	b := s.bc.MineBlock("Execute Transaction To Create Block", rootHash, s.accs)
 	s.bloadcastVerifyBlock(b)
-	s.bc.AddBlock(b, b.Hash, s.accs)
+	s.bc.AddBlock(b, s.tp.Pop(), s.accs)
 	message := "Transaction from " + s.accs[in.GetFrom()].Name + " to " + s.accs[in.GetTo()].Name + " with amount " + strconv.Itoa(int(in.GetAmount()))
 	return &pb.TransactionReply{Message: message}, nil
 }
