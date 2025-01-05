@@ -16,20 +16,20 @@ func (s *server) ExecuteTrunsaction(_ context.Context, in *pb.TransactionRequest
 	log.Printf("Transaction from %s to %s", in.GetFrom(), in.GetTo())
 	log.Printf("Amount: %d", in.GetAmount())
 
-	tr1 := transaction.CreateNewTransaction(0, in.GetFrom(), in.GetTo(), int(in.GetAmount()))
-	s.bloadcastTransaction(*tr1)
-	s.tp.Push(tr1)
+	tx := transaction.CreateNewTransaction(0, in.GetFrom(), in.GetTo(), int(in.GetAmount()))
+	s.bloadcastTransaction(*tx)
+	s.tp.Push(tx)
 	rootHash := s.tp.GetRootHash()
 	log.Printf("Merkle Tree Root Hash: %x", rootHash)
 
 	b := s.bc.MineBlock("Execute Transaction To Create Block", rootHash, s.accs)
-	s.bloadcastVerifyBlock(b)
+	s.bloadcastBlock(b)
 	s.bc.AddBlock(b, s.tp.Pop(), s.accs)
 	message := "Transaction from " + s.accs[in.GetFrom()].Name + " to " + s.accs[in.GetTo()].Name + " with amount " + strconv.Itoa(int(in.GetAmount()))
 	return &pb.TransactionReply{Message: message}, nil
 }
 
-func (s *server) bloadcastTransaction(tr transaction.Transaction) {
+func (s *server) bloadcastTransaction(tx transaction.Transaction) {
 	for _, node := range s.nodes {
 		go func() {
 			// Connect to client node
@@ -40,7 +40,7 @@ func (s *server) bloadcastTransaction(tr transaction.Transaction) {
 			defer conn.Close()
 
 			n := pb.NewNodeClient(conn)
-			b, err := n.Bloadcast(context.Background(), &pb.Transaction{Content: tr.ToJson()})
+			b, err := n.Bloadcast(context.Background(), &pb.Transaction{Content: tx.ToJson()})
 			if err != nil {
 				log.Fatalf("could not bloadcast: %v", err)
 			}
@@ -49,7 +49,7 @@ func (s *server) bloadcastTransaction(tr transaction.Transaction) {
 	}
 }
 
-func (s *server) bloadcastVerifyBlock(b *block.Block) {
+func (s *server) bloadcastBlock(b *block.Block) {
 	for _, node := range s.nodes {
 		go func() {
 			// Connect to client node
