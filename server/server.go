@@ -39,7 +39,7 @@ func (s *server) Bloadcast(_ context.Context, in *pb.Transaction) (*pb.Verify, e
 	log.Printf("Received: %s", in.GetContent())
 	tr := transaction.Transaction{}
 	tr.FromJson(in.GetContent())
-	log.Printf("Transaction: %s", tr.String())
+	log.Printf("Transaction: %s", tr.ToJson())
 	if !validateTransaction(tr) {
 		return &pb.Verify{Valid: false}, nil
 	}
@@ -52,7 +52,7 @@ func (s *server) BloadcastBlock(_ context.Context, in *pb.Block) (*pb.VerifyBloc
 	log.Printf("Received: %s", in.GetContent())
 	b := block.Block{}
 	b.FromJson(in.GetContent())
-	log.Printf("Block: %s", b.String())
+	log.Printf("Block: %s", b.ToJson())
 	// TODO: Validate block
 	s.bc.AddBlock(&b, s.tp.Pop(), s.accs)
 	return &pb.VerifyBlock{Valid: true}, nil
@@ -92,7 +92,7 @@ func (s *server) Sync(_ context.Context, in *pb.SyncInfo) (*pb.SyncReply, error)
 			log.Fatalf("could not upload: %v", err)
 		}
 		for _, state := range s.bc.State {
-			log.Printf("Syncing: %s", state.String())
+			log.Printf("Syncing: %s", state.ToJson())
 			err := stream.Send(&pb.FileChunk{Content: state.ToJson()})
 			if err != nil {
 				log.Fatalf("could not send: %v", err)
@@ -122,7 +122,7 @@ func (s *server) Upload(stream pb.Node_UploadServer) error {
 		s.bc.State[len(s.bc.State)-1].FromJson(in.GetContent())
 		s.accs = s.bc.State[len(s.bc.State)-1].Accounts
 		log.Printf("Received: %s", in.GetContent())
-		log.Printf("State: %s", s.bc.State[len(s.bc.State)-1].String())
+		log.Printf("State: %s", s.bc.State[len(s.bc.State)-1].ToJson())
 	}
 
 }

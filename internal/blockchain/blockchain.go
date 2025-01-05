@@ -40,7 +40,7 @@ func (bc *Blockchain) CreateGenesisBlock(acc map[string]*account.Account) {
 	}
 
 	bc.State = append(bc.State, state.CreateNewState(acc, &genesisBlock))
-	log.Println(bc.State[len(bc.State)-1].String())
+	log.Printf("Create Genesis Block: %s", bc.State[len(bc.State)-1].ToJson())
 }
 
 func (bc *Blockchain) AddBlock(b *block.Block, txs []*transaction.Transaction, accs map[string]*account.Account) {
@@ -60,13 +60,13 @@ func (bc *Blockchain) AddBlock(b *block.Block, txs []*transaction.Transaction, a
 	for _, t := range txs {
 		t.Run(accs)
 	}
-	log.Println(bc.State[len(bc.State)-1].String())
+	log.Printf("Add Block: %s", bc.State[len(bc.State)-1].ToJson())
 }
 
-func (bc *Blockchain) MineBlock(message string, txs []byte, accs map[string]*account.Account) *block.Block {
+func (bc *Blockchain) MineBlock(message string, txsRootHash []byte, accs map[string]*account.Account) *block.Block {
 	newBlock := bc.State[len(bc.State)-1].Block.GenerateBlock()
 	newBlock.Data = message
-	newBlock.TxsRootHash = txs
+	newBlock.TxsRootHash = txsRootHash
 	for i := 0; i < tryLimit; i++ {
 		newBlock.Nonce = i
 		newBlock.Hash = newBlock.CalculateHash()
