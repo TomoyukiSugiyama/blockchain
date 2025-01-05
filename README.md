@@ -10,13 +10,13 @@ protoc --go_out=. --go_opt=paths=source_relative \
 
 ## server
 ```bash
-# master server
+# root server
 go run cli/main.go -mode server -serverType root -appAddress 127.0.0.1:8080 -nodeAddress 127.0.0.1:9090
 # client server
 go run cli/main.go -mode server -serverType client -appAddress 127.0.0.1:8081 -nodeAddress 127.0.0.1:9091 -targetRootAddress 127.0.0.1:9090
 ```
 
-### client
+### application
 ```bash
 # request to root node
 go run cli/main.go -mode app -targetNodeAddress 127.0.0.1:8080
