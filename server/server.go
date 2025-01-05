@@ -190,10 +190,11 @@ func (s *server) Upload(stream pb.Node_UploadServer) error {
 
 func StartServer(clientAddress, nodeAddress string) {
 	bc := blockchain.NewBlockchain()
-	bc.CreateGenesisBlock()
+	acc := InitAccount()
+	bc.CreateGenesisBlock(acc)
 	server := server{
 		bc:            bc,
-		accs:          InitAccount(),
+		accs:          acc,
 		clientAddress: clientAddress,
 		nodeAddress:   nodeAddress,
 		nodes:         map[string]string{},

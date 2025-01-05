@@ -22,7 +22,7 @@ func NewBlockchain() *Blockchain {
 	return bc
 }
 
-func (bc *Blockchain) CreateGenesisBlock() {
+func (bc *Blockchain) CreateGenesisBlock(acc map[string]*account.Account) {
 	genesisBlock := block.Block{
 		Index:     0,
 		Timestamp: time.Now().String(),
@@ -39,7 +39,7 @@ func (bc *Blockchain) CreateGenesisBlock() {
 		}
 	}
 
-	bc.State = append(bc.State, state.CreateNewState(nil, &genesisBlock))
+	bc.State = append(bc.State, state.CreateNewState(acc, &genesisBlock))
 	log.Println(bc.State[len(bc.State)-1].String())
 }
 
