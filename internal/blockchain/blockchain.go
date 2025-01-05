@@ -57,7 +57,6 @@ func (bc *Blockchain) AddBlock(b *block.Block, txs []*transaction.Transaction, a
 	}
 
 	bc.State = append(bc.State, state.CreateNewState(accs, b))
-	log.Println("Transactions len", len(txs))
 	for _, t := range txs {
 		t.Run(accs)
 	}
