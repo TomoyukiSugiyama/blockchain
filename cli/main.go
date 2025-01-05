@@ -8,33 +8,33 @@ import (
 )
 
 func main() {
-	mode := flag.String("mode", "server", "server or client")
-	serverType := flag.String("type", "master", "master or client")
-	clientAddress := flag.String("clientAddress", "127.0.0.1:8080", "node address")
-	rootAddress := flag.String("rootAddress", "127.0.0.1:9090", "node address")
+	mode := flag.String("mode", "server", "server or app")
+	serverType := flag.String("serverType", "root", "root or client")
+	appAddress := flag.String("appAddress", "127.0.0.1:8080", "node address")
+	targetRootAddress := flag.String("targetRootAddress", "127.0.0.1:9090", "node address")
 	nodeAddress := flag.String("nodeAddress", "127.0.0.1:9090", "node address")
-	targetNodeAddress := flag.String("address", "127.0.0.1:8080", "target address")
+	targetNodeAddress := flag.String("targetNodeAddress", "127.0.0.1:8080", "target address")
 	flag.Parse()
 
 	if *mode == "server" {
-		serverMode(*serverType, *rootAddress, *clientAddress, *nodeAddress)
-	} else if *mode == "client" {
-		clientMode(*targetNodeAddress)
+		serverMode(*serverType, *targetRootAddress, *appAddress, *nodeAddress)
+	} else if *mode == "app" {
+		applicationMode(*targetNodeAddress)
 	} else {
 		fmt.Println("Invalid mode")
 	}
 }
 
-func serverMode(serverType string, rootAddress string, clientAddress string, nodeAddress string) {
-	if serverType == "master" {
-		server.StartServer(clientAddress, nodeAddress)
+func serverMode(serverType string, targetRootAddress string, appAddress string, nodeAddress string) {
+	if serverType == "root" {
+		server.StartRootServer(appAddress, nodeAddress)
 	} else if serverType == "client" {
-		server.StartClientServer(rootAddress, clientAddress, nodeAddress)
+		server.StartClientServer(targetRootAddress, appAddress, nodeAddress)
 	} else {
 		fmt.Println("Invalid server type")
 	}
 }
 
-func clientMode(targetNodeAddress string) {
+func applicationMode(targetNodeAddress string) {
 	client.Run(targetNodeAddress)
 }
