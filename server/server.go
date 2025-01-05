@@ -37,14 +37,14 @@ func InitAccount() map[string]*account.Account {
 
 func (s *server) Bloadcast(_ context.Context, in *pb.Transaction) (*pb.Verify, error) {
 	log.Printf("Received: %s", in.GetContent())
-	tr := transaction.Transaction{}
-	tr.FromJson(in.GetContent())
-	log.Printf("Transaction: %s", tr.ToJson())
-	if !validateTransaction(tr) {
+	tx := transaction.Transaction{}
+	tx.FromJson(in.GetContent())
+	log.Printf("Transaction: %s", tx.ToJson())
+	if !validateTransaction(tx) {
 		return &pb.Verify{Valid: false}, nil
 	}
 
-	s.tp.Push(&tr)
+	s.tp.Push(&tx)
 	return &pb.Verify{Valid: true}, nil
 }
 
@@ -58,8 +58,8 @@ func (s *server) BloadcastBlock(_ context.Context, in *pb.Block) (*pb.VerifyBloc
 	return &pb.VerifyBlock{Valid: true}, nil
 }
 
-func validateTransaction(tr transaction.Transaction) bool {
-	if tr.From == "" || tr.To == "" || tr.Amount <= 0 {
+func validateTransaction(tx transaction.Transaction) bool {
+	if tx.From == "" || tx.To == "" || tx.Amount <= 0 {
 		return false
 	}
 	return true
